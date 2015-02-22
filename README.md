@@ -1,6 +1,8 @@
 frontend-nanodegree-arcade-game
 ===============================
 
-Students should use this rubric: https://www.udacity.com/course/viewer#!/c-ud015/l-3072058665/m-3072588797
+To play the game, open the index.html in a browser. 
 
-for self-checking their submission.
+The player can freely move in the board, and must avoid the bugs. If a bug touches the player, a life is lost
+
+When all lives are lost, the game is over. To start a new game, refresh the page
