@@ -14,7 +14,7 @@
  * a little simpler to work with.
  */
 
-var Engine = (function(global) {
+var Engine = (function (global) {
     /* Predefine the variables we'll be using within this scope,
      * create the canvas element, grab the 2D context for that canvas
      * set the canvas elements height/width and add it to the DOM.
@@ -57,7 +57,7 @@ var Engine = (function(global) {
          * function again as soon as the browser is able to draw another frame.
          */
         win.requestAnimationFrame(main);
-    };
+    }
 
     /* This function does some initial setup that should only occur once,
      * particularly setting the lastTime variable that is required for the
@@ -80,7 +80,7 @@ var Engine = (function(global) {
      */
     function update(dt) {
         updateEntities(dt);
-        // checkCollisions();
+        checkCollisions();
     }
 
     /* This is called by the update function  and loops through all of the
@@ -91,10 +91,18 @@ var Engine = (function(global) {
      * render methods.
      */
     function updateEntities(dt) {
-        allEnemies.forEach(function(enemy) {
+        allEnemies.forEach(function (enemy) {
             enemy.update(dt);
         });
-        player.update();
+//        player.update();
+    }
+
+    function checkCollisions() {
+        allEnemies.forEach(function (enemy) {
+            if (enemy.y === player.y && Math.abs(enemy.x - player.x) < Constants.CELL_X_SIZE / 2 + 1) {
+                player.die();
+            }
+        });
     }
 
     /* This function initially draws the "game level", it will then call
@@ -136,8 +144,13 @@ var Engine = (function(global) {
             }
         }
 
-
         renderEntities();
+        renderLives();
+        if (gameState === 'GAME_OVER') {
+            // if the game has finished, render the "game over" text over all other elements
+            // in the screen
+            renderGameOver();
+        }
     }
 
     /* This function is called by the render function and is called on each game
@@ -148,11 +161,40 @@ var Engine = (function(global) {
         /* Loop through all of the objects within the allEnemies array and call
          * the render function you have defined.
          */
-        allEnemies.forEach(function(enemy) {
+        allEnemies.forEach(function (enemy) {
             enemy.render();
         });
 
+        // render the player entity
         player.render();
+    }
+
+    /**
+     * This function renders the lives of the player in the top-left corner of the screen
+     */
+    function renderLives() {
+        ctx.drawImage(Resources.get('images/Heart.png'), 0, 10);
+        ctx.font = "42pt Impact";
+        ctx.textAlign = "left";
+        ctx.fillStyle = "white";
+        ctx.strokeStyle = "black";
+        ctx.fillText("= " + player.lives, 100, 120);
+        ctx.lineWidth = 2;
+        ctx.strokeText("= " + player.lives, 100, 120);
+    }
+
+    /**
+     * This function renders the "game over" text in the middle of the screen
+     */
+    function renderGameOver() {
+        ctx.font = "36pt Impact";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "white";
+        ctx.strokeStyle = "black";
+        ctx.fillText("GAME OVER", 505 / 2, 606 / 2);
+        ctx.lineWidth = 2;
+        ctx.strokeText("GAME OVER", 505 / 2, 606 / 2);
+
     }
 
     /* This function does nothing but it could have been a good place to
@@ -172,7 +214,8 @@ var Engine = (function(global) {
         'images/water-block.png',
         'images/grass-block.png',
         'images/enemy-bug.png',
-        'images/char-boy.png'
+        'images/char-boy.png',
+        'images/Heart.png'
     ]);
     Resources.onReady(init);
 
