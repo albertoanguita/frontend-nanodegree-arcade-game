@@ -94,11 +94,15 @@ var Engine = (function (global) {
         allEnemies.forEach(function (enemy) {
             enemy.update(dt);
         });
+        // decided to remove the update method on the player since the player does not have any continuous movement that
+        // needs to by updated. Movement of the player is instead handled in the handleInput function
 //        player.update();
     }
 
     function checkCollisions() {
         allEnemies.forEach(function (enemy) {
+            // a bug collides with the player if they are in the same row (same y) and their x coordinate differs less than half of the width
+            // of a cell
             if (enemy.y === player.y && Math.abs(enemy.x - player.x) < Constants.CELL_X_SIZE / 2 + 1) {
                 player.die();
             }

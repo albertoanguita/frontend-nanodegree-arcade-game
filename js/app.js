@@ -8,24 +8,32 @@ var gameState = 'PLAY';
  * Some constants that are used across the code in the game
  */
 var Constants = {
+    // number of enemies
     ENEMY_COUNT: 3,
+    // number of initial player lives
     INITIAL_LIVES: 3,
 
+    // size in pixels of the game cells
     CELL_Y_SIZE: 83,
     CELL_X_SIZE: 100,
+    // y offset for correctly rendering entities in their cells
     Y_OFFSET: 20,
 
+    // initial coordinates of the player
     INIT_PLAYER_CELL_X: 2,
     INIT_PLAYER_CELL_Y: 5,
 
+    // these values define the range of cells through which the player is allowed to move
     MIN_PLAYER_ALLOWED_X: 0,
     MAX_PLAYER_ALLOWED_X: 100 * 4,
     MIN_PLAYER_ALLOWED_Y: 83,
     MAX_PLAYER_ALLOWED_Y: 83 * 5 - 20,
 
+    // initial and final x coordinates for enemies
     INIT_ENEMY_X: -120,
     END_ENEMY_X: 505,
 
+    // range of values for the speed of enemies
     MIN_ENEMY_SPEED: 150,
     MAX_ENEMY_SPEED: 450
 };
@@ -51,6 +59,7 @@ var Entity = function (spriteSrc) {
     // The image/sprite for our entity
     this.sprite = spriteSrc;
 };
+
 /**
  * Draw the entity in the screen, based on its x and y attributes
  */
@@ -61,50 +70,68 @@ Entity.prototype.render = function () {
     }
 };
 
-
-// Enemies our player must avoid
+/**
+ * Enemies our player must avoid. These are moving bugs that spawn in any of the brick rows and have varying speeds.
+ *
+ * The Enemy class inherits from the Entity class. It must therefore implement an initPosition function.
+ */
 var Enemy = function () {
     Entity.call(this, 'images/enemy-bug.png');
 };
 Enemy.prototype = Object.create(Entity.prototype);
 Enemy.prototype.constructor = Enemy;
+
+/**
+ * Initializes coordinates and speed of the enemy. The row is randomly selected from any of the 3 brick rows. The speed is also random.
+ * The x is placed on the left of the canvas, so the enemy appears smoothly from the left
+ */
 Enemy.prototype.initPosition = function () {
     this.x = Constants.INIT_ENEMY_X;
     this.y = selectRandomBrickRow();
     this.speed = getRandomInt(Constants.MIN_ENEMY_SPEED, Constants.MAX_ENEMY_SPEED);
 };
 
-// Update the enemy's position, required method for game
-// Parameter: dt, a time delta between ticks
+/**
+ * Update the enemy's position, required method for game
+ *
+ * Parameter: dt, a time delta between ticks
+ */
 Enemy.prototype.update = function (dt) {
     // You should multiply any movement by the dt parameter
     // which will ensure the game runs at the same speed for
     // all computers.
     this.x += this.speed * dt;
 
+    // the code checks if the bug has left the canvas, and if so initialized its position once again
     if (this.x > Constants.END_ENEMY_X) {
         this.initPosition();
     }
 };
 
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
+/**
+ * The Player class, inheriting from the Entity class. The update method was removed since the movement of the player is totally handled in
+ * the handleInput function (the designed seemed easier this way).
+ */
 var Player = function () {
-
     Entity.call(this, 'images/char-boy.png');
-
     // player has an additional attribute, which stores how many lives the player has
     this.lives = Constants.INITIAL_LIVES;
-    // The image/sprite for our enemies, this uses
-    // a helper we've provided to easily load images
 };
 Player.prototype = Object.create(Entity.prototype);
 Player.prototype.constructor = Entity;
+
+/**
+ * Initializes coordinates of the player. Initial coordinates are always the same
+ */
 Player.prototype.initPosition = function () {
     this.x = Constants.CELL_X_SIZE * Constants.INIT_PLAYER_CELL_X;
     this.y = Constants.CELL_Y_SIZE * Constants.INIT_PLAYER_CELL_Y - Constants.Y_OFFSET;
 };
+
+/**
+ * Handles user input and translates it into player movement. The code checks that the player can only move in the grass and brick cells
+ * @param input
+ */
 Player.prototype.handleInput = function (input) {
     switch (input) {
         case 'up':
@@ -129,36 +156,32 @@ Player.prototype.handleInput = function (input) {
             break;
     }
 };
+
+/**
+ * Die method for the player. This function must be invoked every time a bug "touches" the player
+ */
 Player.prototype.die = function () {
+    // the player is moved to its initial position, and looses 1 life
     this.initPosition();
     this.lives--;
     if (this.lives === 0) {
+        // if all lives are lost, the alive attribute is set to false (so it is no longer rendered) an the state of the game is switched
+        // to 'GAME_OVER'
         this.alive = false;
-        gameOver();
+        gameState = 'GAME_OVER';
     }
 };
 
-
-var gameOver = function () {
-    gameState = 'GAME_OVER';
-    ctx.font = "30pt Impact";
-    ctx.textAlign = "center";
-    ctx.fillStyle = "white";
-    ctx.strokeStyle = "black";
-    ctx.fillText("GAME OVER", 505 / 2, 606 / 2);
-    ctx.lineWidth = 2;
-    ctx.strokeText("GAME OVER", 505 / 2, 606 / 2);
-};
 
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
 
+// object instantiation (enemies + player)
 var allEnemies = [];
 for (var i = 0; i < Constants.ENEMY_COUNT; i++) {
     allEnemies.push(new Enemy());
 }
-
 var player = new Player();
 
 // This listens for key presses and sends the keys to your
@@ -173,6 +196,9 @@ document.addEventListener('keyup', function (e) {
     player.handleInput(allowedKeys[e.keyCode]);
 });
 
+/**
+ * Selects a random brick row for spawning bugs, returning the y coordinate for the selected row
+ */
 function selectRandomBrickRow() {
     return Constants.CELL_Y_SIZE * getRandomInt(1, 3) - Constants.Y_OFFSET;
 }
