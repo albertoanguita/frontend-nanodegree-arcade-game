@@ -1,3 +1,5 @@
+"use strict";
+
 /* Engine.js
  * This file provides the game loop functionality (update entities and render),
  * draws the initial game board on the screen, and then calls the update and
@@ -81,6 +83,7 @@ var Engine = (function (global) {
     function update(dt) {
         updateEntities(dt);
         checkCollisions();
+        checkWinCondition();
     }
 
     /* This is called by the update function  and loops through all of the
@@ -107,6 +110,23 @@ var Engine = (function (global) {
                 player.die();
             }
         });
+    }
+
+    /**
+     * Checks if the player has reached the water
+     */
+    function checkWinCondition() {
+        // a bug collides with the player if they are in the same row (same y) and their x coordinate differs less than half of the width
+        // of a cell
+        if (player.y < 0) {
+            player.win();
+            gameLevel++;
+            if (gameLevel % 3 === 0) {
+                // add new enemy
+                allEnemies.push(new Enemy());
+            }
+
+        }
     }
 
     /* This function initially draws the "game level", it will then call
@@ -150,6 +170,7 @@ var Engine = (function (global) {
 
         renderEntities();
         renderLives();
+        renderLevel();
         if (gameState === 'GAME_OVER') {
             // if the game has finished, render the "game over" text over all other elements
             // in the screen
@@ -185,6 +206,20 @@ var Engine = (function (global) {
         ctx.fillText("= " + player.lives, 100, 120);
         ctx.lineWidth = 2;
         ctx.strokeText("= " + player.lives, 100, 120);
+    }
+
+    /**
+     * This function renders the current game level (starting from 1) in the top-right corner of the screen
+     */
+    function renderLevel() {
+        ctx.font = "42pt Impact";
+        ctx.textAlign = "left";
+        ctx.fillStyle = "white";
+        ctx.strokeStyle = "black";
+        var printedLevel = gameLevel + 1;
+        ctx.fillText("level " + printedLevel, 300, 120);
+        ctx.lineWidth = 2;
+        ctx.strokeText("level " + printedLevel, 300, 120);
     }
 
     /**

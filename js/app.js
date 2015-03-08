@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * The state of the game. Initially, the state is 'PLAY'. The state will turn to 'GAME_OVER' when the player looses
  * all its lives
@@ -5,11 +7,18 @@
 var gameState = 'PLAY';
 
 /**
+ * The difficulty level. Starts at 0 and increases every time the player reaches the water
+ * The game level has effect on the number and speed of enemies. Every level will increase the speed of
+ * enemies a little bit. Every three levels this speed increase will be reset, but a new enemy will be added.
+ */
+var gameLevel = 0;
+
+/**
  * Some constants that are used across the code in the game
  */
 var Constants = {
     // number of enemies
-    ENEMY_COUNT: 3,
+    INITIAL_ENEMY_COUNT: 3,
     // number of initial player lives
     INITIAL_LIVES: 3,
 
@@ -26,7 +35,7 @@ var Constants = {
     // these values define the range of cells through which the player is allowed to move
     MIN_PLAYER_ALLOWED_X: 0,
     MAX_PLAYER_ALLOWED_X: 100 * 4,
-    MIN_PLAYER_ALLOWED_Y: 83,
+    MIN_PLAYER_ALLOWED_Y: 0,
     MAX_PLAYER_ALLOWED_Y: 83 * 5 - 20,
 
     // initial and final x coordinates for enemies
@@ -34,8 +43,9 @@ var Constants = {
     END_ENEMY_X: 505,
 
     // range of values for the speed of enemies
-    MIN_ENEMY_SPEED: 150,
-    MAX_ENEMY_SPEED: 450
+    MIN_ENEMY_SPEED: 100,
+    MAX_ENEMY_SPEED: 350,
+    SPEED_INCREASE_BY_LEVEL: 50
 };
 
 
@@ -88,7 +98,7 @@ Enemy.prototype.constructor = Enemy;
 Enemy.prototype.initPosition = function () {
     this.x = Constants.INIT_ENEMY_X;
     this.y = selectRandomBrickRow();
-    this.speed = getRandomInt(Constants.MIN_ENEMY_SPEED, Constants.MAX_ENEMY_SPEED);
+    this.speed = getRandomInt(Constants.MIN_ENEMY_SPEED, Constants.MAX_ENEMY_SPEED) + (gameLevel % 3) * Constants.SPEED_INCREASE_BY_LEVEL;
 };
 
 /**
@@ -158,6 +168,14 @@ Player.prototype.handleInput = function (input) {
 };
 
 /**
+ * Win method for the player. This function must be invoked every time the player reaches the water
+ */
+Player.prototype.win = function () {
+    // the player is moved to its initial position
+    this.initPosition();
+};
+
+/**
  * Die method for the player. This function must be invoked every time a bug "touches" the player
  */
 Player.prototype.die = function () {
@@ -168,6 +186,7 @@ Player.prototype.die = function () {
         // if all lives are lost, the alive attribute is set to false (so it is no longer rendered) an the state of the game is switched
         // to 'GAME_OVER'
         this.alive = false;
+        document.removeEventListener('keyup', myKeyListener);
         gameState = 'GAME_OVER';
     }
 };
@@ -179,14 +198,21 @@ Player.prototype.die = function () {
 
 // object instantiation (enemies + player)
 var allEnemies = [];
-for (var i = 0; i < Constants.ENEMY_COUNT; i++) {
+for (var i = 0; i < Constants.INITIAL_ENEMY_COUNT; i++) {
     allEnemies.push(new Enemy());
 }
 var player = new Player();
 
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
-document.addEventListener('keyup', function (e) {
+document.addEventListener('keyup', myKeyListener);
+
+/**
+ * This function is used as listener for the key input. We need a named function to be able to detach it later
+ *
+ * @param e the pressed key
+ */
+function myKeyListener(e) {
     var allowedKeys = {
         37: 'left',
         38: 'up',
@@ -194,7 +220,7 @@ document.addEventListener('keyup', function (e) {
         40: 'down'
     };
     player.handleInput(allowedKeys[e.keyCode]);
-});
+}
 
 /**
  * Selects a random brick row for spawning bugs, returning the y coordinate for the selected row
